@@ -95,7 +95,7 @@ WC,16W,7,18,0.13,8,220,222,£55.44,0.05
 WC,2X18W,32,40,1.28,8,220,2253,£563.20,0.52
 WC,58W,1,64,0.06,8,220,113,£28.16,0.03
 PROPOSED FITTINGS
-Area,Lamp replacement,Quantity,Wattage,kW/Hour,Hours per Day,Days,Total kWh Per Annum,Proposed Running Cost,CO2 Tns
+Area,Lamp replacement,Quantity,Wattage,kW/Hour,Hours per Day,Days,Total kWh Per annum,Proposed Running Cost,CO2 Tns
 CIRCULATION,70W PENDANT,7,70,0.49,4,220,431,£107.80,0.10
 CIRCULATION,16W PANEL,67,16,1.07,4,220,943,£235.84,0.22
 CIRCULATION,10W BULKHEAD,46,10,0.46,4,220,405,£101.20,0.09
@@ -304,39 +304,38 @@ st.divider()
 # === VISUAL ANALYSIS ===
 st.header("Visual Analysis")
 
-# REDESIGNED Gauge Charts using the multi-layer Donut method
-st.subheader("Visual Comparison: Current vs. Estimated")
+# REDESIGNED Gauge Charts using the Donut Chart method
+st.subheader("Visual Comparison of Annual Savings")
 g1, g2, g3 = st.columns(3)
 
-def create_multi_layer_gauge(new_val, current_val, explainer_text, title_text, prefix="", suffix="", dtick_val=None, max_range=None):
+def create_donut_gauge(new_val, current_val, explainer_text, title_text, prefix="", suffix="", max_range=None):
     if max_range is None:
         max_range = current_val * 1.1 if current_val > 0 else 1
     
-    fig = go.Figure()
-
-    # Layer 1: White background with visible ticks
-    fig.add_trace(go.Pie(
-        values=[max_range / 2, max_range / 2],
-        marker_colors=['white', 'rgba(0,0,0,0)'],
-        hole=0.5, sort=False, direction='clockwise', rotation=180, showlegend=False,
-        hoverinfo='none', textinfo='none'
-    ))
-
-    # Layer 2: Red bar for current value
-    fig.add_trace(go.Pie(
-        values=[current_val, max_range - current_val, max_range],
-        marker_colors=['rgba(214, 39, 40, 0.8)', 'rgba(0,0,0,0)', 'rgba(0,0,0,0)'],
-        hole=0.6, sort=False, direction='clockwise', rotation=90, showlegend=False,
-        hoverinfo='none', textinfo='none'
-    ))
+    # Calculate slice values
+    green_slice = new_val
+    red_slice = current_val - new_val
+    gray_slice = max_range - current_val
     
-    # Layer 3: Green bar for new value
-    fig.add_trace(go.Pie(
-        values=[new_val, max_range - new_val, max_range],
-        marker_colors=['#2ca02c', 'rgba(0,0,0,0)', 'rgba(0,0,0,0)'],
-        hole=0.7, sort=False, direction='clockwise', rotation=90, showlegend=False,
-        hoverinfo='none', textinfo='none'
-    ))
+    # Ensure no negative slices if new_val exceeds current_val
+    if red_slice < 0:
+        green_slice = current_val
+        red_slice = 0
+
+    values = [green_slice, red_slice, gray_slice, max_range] # Last value is for the hidden bottom half
+    colors = ['#2ca02c', '#d62728', '#f0f2f6', 'rgba(0,0,0,0)'] # Green, Red, Gray, Transparent
+    
+    fig = go.Figure(data=[go.Pie(
+        values=values,
+        marker_colors=colors,
+        hole=0.6,
+        sort=False,
+        direction='clockwise',
+        rotation=90,
+        showlegend=False,
+        hoverinfo='none',
+        textinfo='none'
+    )])
 
     # Add annotations for the text, placed below the gauge arc
     savings = current_val - new_val
@@ -358,11 +357,11 @@ def create_multi_layer_gauge(new_val, current_val, explainer_text, title_text, p
     return fig
 
 with g1:
-    st.plotly_chart(create_multi_layer_gauge(led_kwh, current_kwh, "Energy Savings", "Consumption (kWh)", suffix=" kWh", max_range=200000), use_container_width=True)
+    st.plotly_chart(create_donut_gauge(led_kwh, current_kwh, "Energy Savings", "Consumption (kWh)", suffix=" kWh", max_range=200000), use_container_width=True)
 with g2:
-    st.plotly_chart(create_multi_layer_gauge(led_cost, current_cost, "Cost Savings", "Expenditure (£)", "£", max_range=60000), use_container_width=True)
+    st.plotly_chart(create_donut_gauge(led_cost, current_cost, "Cost Savings", "Expenditure (£)", "£", max_range=60000), use_container_width=True)
 with g3:
-    st.plotly_chart(create_multi_layer_gauge(led_co2, current_co2, "Emissions Reduction", "Emissions (T CO₂e)", suffix=" T CO₂e", max_range=50), use_container_width=True)
+    st.plotly_chart(create_donut_gauge(led_co2, current_co2, "Emissions Reduction", "Emissions (T CO₂e)", suffix=" T CO₂e", max_range=50), use_container_width=True)
 
 
 st.subheader("Savings Contribution by Area")
